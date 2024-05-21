@@ -1,0 +1,8 @@
+prefix=/home/vivek/catkin_ws/install
+
+Name: move_robot
+Description: Description of move_robot
+Version: 0.0.0
+Cflags: -I${prefix}/include
+Libs: -L${prefix}/lib 
+Requires: roscpp rospy std_msgs message_runtime tf2 obstacle_detector

@@ -1,0 +1,116 @@
+#include <ros/ros.h>
+#include <grid_map_ros/grid_map_ros.hpp>
+#include <grid_map_msgs/GridMap.h>
+#include <cmath>
+#include <nav_msgs/Odometry.h>
+#include <tf/transform_datatypes.h>
+#include <list>
+
+constexpr float map_x_lim = 2.0; 
+constexpr float map_y_lim = 2.0;
+constexpr float map_res = 0.03;
+
+using namespace grid_map;
+
+// Global variables
+float P_prior = 0.5;	// Prior occupancy probability
+float P_occ = 0.9;	// Probability that cell is occupied with total confidence
+float P_free = 0.3;	// Probability that cell is free with total confidence 
+
+nav_msgs::Odometry odom;
+double odom_x = 0.0;
+double odom_y = 0.0;
+double odom_theta = 0.0;
+
+void odomCallback(const nav_msgs::Odometry::ConstPtr& msg)
+{
+  odom = *msg;
+  // Extract the x and y position from the odometry message
+  odom_x = odom.pose.pose.position.x;
+  odom_y = odom.pose.pose.position.y;
+
+  // Extract the orientation quaternion from the odometry message
+  geometry_msgs::Quaternion quat = odom.pose.pose.orientation;
+
+  // Convert the quaternion to roll, pitch, and yaw angles (in radians)
+  tf::Quaternion tf_quat(quat.x, quat.y, quat.z, quat.w);
+  tf::Matrix3x3 m(tf_quat);
+  double roll, pitch, yaw;
+  m.getRPY(roll, pitch, yaw);
+  
+  odom_theta = yaw;
+  // Print out the position and orientation information
+  // ROS_INFO("Odometry message received: x=%f, y=%f", odom_x, odom_y);
+  // std::cout << "inside callback " << odom_x << " " << odom_y << " " << odom_theta << "\n" ;
+}
+
+list<float> dist;
+list<float> dist_x;
+list<float> dist_y;
+list<float> ls_angles;
+float max_las_range = 0.0
+
+void lasserCallback(msg)
+{
+  ls = *msg;
+  dist = ls.distances;
+  dist_x = ls.distances_x;
+  dist_y = ls.distances_y;
+  ls_angles = ls.angles;
+  max_las_range = ls.max_las_range;
+
+}
+
+int main(int argc, char** argv)
+{
+  // Initialize node and publisher.
+  ros::init(argc, argv, "grid_map_simple_demo");
+  ros::NodeHandle nh; // ("~");
+  ros::Publisher publisher = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
+  ros::Subscriber odom_sub = nh.subscribe("/odom", 10, odomCallback);
+  ros::Subscriber laser_sub = nh.subscribe("/laser_mes", 10, laserCallback); 
+
+  // Create grid map.
+  GridMap map({"elevation"});
+  map.setFrameId("map");
+  map.setGeometry(Length(map_x_lim, map_y_lim), map_res);
+  ROS_INFO("Created map with size %f x %f m (%i x %i cells).",
+    map.getLength().x(), map.getLength().y(),
+    map.getSize()(0), map.getSize()(1));
+
+  // Work with grid map in a loop.
+  ros::Rate rate(30.0);
+  while (nh.ok()) {
+    map.setPosition(Position(odom_x,odom_y));
+    ROS_INFO("Pose is x=%lf, y=%lf", odom_x, odom_y);
+    // Add data to grid map.
+    ros::Time time = ros::Time::now();
+    for (GridMapIterator it(map); !it.isPastEnd(); ++it) {
+      Position position;
+      map.getPosition(*it, position);
+      map.at("elevation", *it) = P_free;
+
+    for (int i = 0; i <= dist_x.size() ; ++i){
+      if (map.isInside([dist_x(i), dist_y(i)])){
+        it = map.atPosition("elevation", [dist_x(i), dist_y(i)]);
+        map.at("elevation", *it) = P_occ;
+    }
+    }
+     
+    }
+
+    // Publish grid map.
+    map.setTimestamp(time.toNSec());
+    grid_map_msgs::GridMap message;
+    GridMapRosConverter::toMessage(map, message);
+    
+    publisher.publish(message);
+    ROS_INFO_THROTTLE(1.0, "Grid map (timestamp %f) published.", message.info.header.stamp.toSec());
+
+    // Wait for next cycle.
+    ros::spinOnce();
+    rate.sleep();
+  }
+
+  return 0;
+}

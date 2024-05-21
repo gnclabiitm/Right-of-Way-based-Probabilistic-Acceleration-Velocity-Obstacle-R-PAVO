@@ -1,0 +1,20 @@
+(cl:defpackage move_robot-srv
+  (:use )
+  (:export
+   "OGM"
+   "<OGM-REQUEST>"
+   "OGM-REQUEST"
+   "<OGM-RESPONSE>"
+   "OGM-RESPONSE"
+   "SYNCMOTION"
+   "<SYNCMOTION-REQUEST>"
+   "SYNCMOTION-REQUEST"
+   "<SYNCMOTION-RESPONSE>"
+   "SYNCMOTION-RESPONSE"
+   "XYCOORD"
+   "<XYCOORD-REQUEST>"
+   "XYCOORD-REQUEST"
+   "<XYCOORD-RESPONSE>"
+   "XYCOORD-RESPONSE"
+  ))
+

@@ -1,0 +1,45 @@
+<launch>
+  <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
+  <arg name="second_tb3"  default="tb3_1"/>
+
+  <!-- <arg name="second_tb3_x_pos" default="2.0"/>
+  <arg name="second_tb3_y_pos" default="1.0"/>
+  <arg name="second_tb3_z_pos" default="0.0"/>
+  <arg name="second_tb3_yaw"   default="3.14"/>
+
+  <arg name="second_tb3_goal_x"   default="0.5"/>
+  <arg name="second_tb3_goal_y"   default="1.0"/> -->
+
+  <arg name="second_tb3_x_pos" default="-0.75"/>
+  <arg name="second_tb3_y_pos" default="1.3"/>
+  <arg name="second_tb3_z_pos" default="0.0"/>
+  <arg name="second_tb3_yaw"   default="5.2"/>
+
+  <arg name="second_tb3_goal_x"   default="0.75"/>
+  <arg name="second_tb3_goal_y"   default="-1.3"/>
+
+  <!-- <arg name="second_tb3_x_pos" default="0.0"/>
+  <arg name="second_tb3_y_pos" default="3.0"/>
+  <arg name="second_tb3_z_pos" default="0.0"/>
+  <arg name="second_tb3_yaw"   default="0.0"/>
+
+  <arg name="second_tb3_goal_x"   default="5.5"/>
+  <arg name="second_tb3_goal_y"   default="4.2"/> -->
+
+  <group ns = "$(arg second_tb3)">
+    <param name="tf_prefix" value="$(arg second_tb3)_tf" />
+
+    <node pkg="move_robot" type="set_initial_goal.py" name="set_initial_goal_tb3_1" output="screen">
+      <param name="initial_x" value="$(eval arg('second_tb3_x_pos') - arg('second_tb3_x_pos'))"/>
+      <param name="initial_y" value="$(eval arg('second_tb3_y_pos') - arg('second_tb3_y_pos'))"/>
+      <param name="initial_z" value="$(eval arg('second_tb3_z_pos') - arg('second_tb3_z_pos'))"/>
+      <param name="initial_yaw" value="$(arg second_tb3_yaw)"/>
+      <param name="goal_x" value="$(eval arg('second_tb3_goal_x') - arg('second_tb3_x_pos'))"/>
+      <param name="goal_y" value="$(eval arg('second_tb3_goal_y') - arg('second_tb3_y_pos'))"/>
+      <param name="goal_z" value="0.0"/>
+    </node>
+
+  </group>
+
+</launch>
+

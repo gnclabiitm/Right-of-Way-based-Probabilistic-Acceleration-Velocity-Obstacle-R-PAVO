@@ -1,0 +1,18 @@
+<launch>
+  <arg name="second_tb3" default="tb3_1" />
+  
+  <group ns = "$(arg second_tb3)">
+    <param name="tf_prefix" value="$(arg second_tb3)_tf" />
+
+    <include file="$(find turtlebot3_bringup)/launch/turtlebot3_robot.launch">
+        <arg name="multi_robot_name" value="$(arg second_tb3)" />
+        <arg name="set_lidar_frame_id" value="$(arg second_tb3)/base_scan" />
+    </include>
+	
+    <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch">
+        <arg name="multi_robot_name" value="$(arg second_tb3)" />
+    </include>
+	
+  </group>
+
+</launch>

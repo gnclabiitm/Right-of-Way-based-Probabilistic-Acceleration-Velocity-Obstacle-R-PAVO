@@ -1,0 +1,27 @@
+<launch>
+  <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
+  <arg name="second_tb3"  default="tb3_1"/>
+  <arg name="map_x_limit"     default="2.0"/>
+  <arg name="map_y_limit"     default="2.0"/>
+  <arg name="map_resolution"  default="0.2"/>
+
+  <group ns = "$(arg second_tb3)">
+    <param name="tf_prefix" value="$(arg second_tb3)_tf" />
+
+    <node pkg="move_robot" type="occlusion_coords.py" name="occlusion_coords_tb3_1" output="screen">
+    </node>
+
+    <node pkg="move_robot" type="ogm_node" name="OGM_super_node_tb3_1" output="screen">
+      <param name="map_x_limit" value="$(arg map_x_limit)"/>
+      <param name="map_y_limit" value="$(arg map_y_limit)"/>
+      <param name="map_resolution" value="$(arg map_resolution)"/>
+    </node>
+  
+    <node pkg="grid_map_visualization" type="grid_map_visualization"
+        name="grid_map_visualization" output="screen">
+        <rosparam command="load" file="$(find move_robot)/config/grid_map_config_tb3_1.yaml" />
+    </node>
+
+  </group>
+
+</launch>

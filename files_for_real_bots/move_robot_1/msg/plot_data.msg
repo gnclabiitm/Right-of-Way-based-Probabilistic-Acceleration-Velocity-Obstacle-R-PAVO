@@ -1,0 +1,14 @@
+float64 curr_velocity_x
+float64 curr_velocity_y
+float64 des_velocity_x
+float64 des_velocity_y
+float64 t_iter
+float64 delta
+float64 t_horizon
+float64 avoid_i
+float64 a_long
+float64 a_lat
+float64 vel_mag
+float64 a_long_lv
+float64 a_lat_wv
+float64 accel

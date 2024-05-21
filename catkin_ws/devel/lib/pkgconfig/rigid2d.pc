@@ -1,0 +1,8 @@
+prefix=/home/vivek/catkin_ws/devel
+
+Name: rigid2d
+Description: Description of rigid2d
+Version: 0.0.1
+Cflags: -I/home/vivek/catkin_ws/devel/include -I/home/vivek/catkin_ws/src/turtlebot3_from_scratch/rigid2d/include
+Libs: -L${prefix}/lib -lrigid2d
+Requires: message_runtime roscpp std_msgs

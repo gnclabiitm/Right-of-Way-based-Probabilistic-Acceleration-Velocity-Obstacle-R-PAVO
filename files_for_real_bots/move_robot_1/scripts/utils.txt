@@ -1,0 +1,252 @@
+#!/usr/bin/env python
+
+import numpy as np
+import math
+from scipy.stats import norm
+
+def find_los_angle(x2,y2,x1,y1,yaw):
+    dx = x2 - x1
+    dy = y2 - y1
+    distance = math.sqrt(dx**2 + dy**2)
+    theta = math.atan2(dy,dx)
+    angle = (theta - yaw)
+
+    return distance, angle
+
+def obstacles_under_horizon(obstacles):
+    obst_tag = []
+    tag = []
+    for i in range(len(obstacles)):
+        tag = obstacles[i]
+        obst_tag.append(tag)
+
+    return obst_tag
+
+def get_conflict_region(R1,R2,R3,R4, angle):
+    region = 0
+
+    if (angle > R1) and (angle <= R2):
+        region = 2
+    elif (angle > R2) and (angle < R3):
+        region = 3
+    elif (angle >= R3) and (angle < R4):
+        region = 4
+    else:
+        region = 1
+
+    return region
+
+def Encounter_type(obst_tags, alpha_i, R_d, agent_pos, agent_vel_x, agent_vel_y):
+    ROW = []
+    ROW1 = 0
+    right_of_way = False
+    stat_obst = True
+    alpha_j = None
+    
+    agent_x = agent_pos.pose.pose.position.x
+    agent_y = agent_pos.pose.pose.position.y
+    R1 = 45*np.pi/180
+    R2 = 135*np.pi/180
+    R3 = 225*np.pi/180
+    R4 = 315*np.pi/180
+
+    RoW_Matrix = np.array([[0, 1, 1, 1],   
+                           [0, 1, 1, 0],
+                           [0, 1, 1, 1],
+                           [0, 1, 1, 1]])
+    
+    if alpha_i < 0:
+            alpha_i = 2*np.pi + alpha_i
+
+    for j in len(obst_tags):
+        obs_x = obst_tags[j].center.x
+        obs_y = obst_tags[j].center.y
+        obs_vel_x = obst_tags[j].velocity.x
+        obs_vel_y = obst_tags[j].velocity.y
+
+        theta = math.atan2((obs_y-agent_y), (obs_x-agent_x))
+        if theta < 0:
+            theta = 2*np.pi + theta
+
+        alpha_j = math.atan2((-obs_vel_y),(-obs_vel_x))
+        if alpha_j < 0:
+            alpha_j = 2*np.pi + alpha_j
+
+        beta = ((theta - alpha_i + np.pi)%(2*np.pi)) + (np.pi)
+        if beta > 2*np.pi:
+            beta = beta - 2*np.pi
+
+        alpha = ((alpha_j - alpha_i + np.pi)%(2*np.pi)) + (np.pi)
+        if alpha > 2*np.pi:
+            alpha = alpha - 2*np.pi
+
+        beta_region = get_conflict_region(R1,R2,R3,R4, beta)
+        alpha_region = get_conflict_region(R1,R2,R3,R4, alpha)
+
+        dist_agents = np.sqrt((agent_x-obs_x)**2+(agent_y-obs_y)**2)
+
+        ROW1 = RoW_Matrix[alpha_region,beta_region]
+
+        if (dist_agents < 2*np.sqrt(2)*R_d) and (beta_region == 4) and (alpha_region == 1):
+            ROW1 = 0
+
+        ROW.append(ROW1)
+
+        if ((abs(agent_vel_x-obs_vel_x) <= 0.01) and (abs(agent_vel_y-obs_vel_y) <= 0.01)):
+            
+            if ((beta_region == 3) or (dist_agents >= 2*np.sqrt(2)*R_d)): 
+                stat_obst = True #Static obstcale but no problem
+            else:
+                stat_obst = False
+
+    
+    if (len(ROW)==np.sum(ROW)):
+        right_of_way = True
+        
+
+    return right_of_way,stat_obst
+
+def admissible_vel(a_max,lin_speed,vel_x, vel_y,yaw,del_t,goal_x,goal_y,pos_x,pos_y):
+    v = lin_speed
+    a = np.arange(-a_max, a_max, 10)
+    a = np.arange(-a_max, a_max, (2*a_max)/10)
+    a_x = []
+    a_y = []
+    #w = np.arange(-0.5,0.5,10)
+    #k = math.tan(w*0.01)/0.006
+    k = np.arange(-a_max/v^2, a_max/v^2, (2*a_max/v^2)/10)
+    R = np.array([[math.cos(yaw), -math.sin(yaw)],
+                  [math.sin(yaw), math.cos(yaw)]])
+    
+    # create a meshgrid of the two arrays
+    A, B = np.meshgrid(k, a)
+    # stack the two arrays to create a matrix
+    P = np.column_stack((B.flatten(), A.flatten()))
+
+    for i in range(0,int(len(P))):
+        a_x.append(P[i][0])
+        a_y.append((v**2)*P[i][1])
+
+    A = np.dot(R, np.array([a_x,
+                            a_y]))
+
+    #reachable velocities
+    v_x = A[0]*del_t 
+    v_y = A[1]*del_t
+
+    dis, theta = find_los_angle(goal_x,goal_y,pos_x,pos_y, yaw)
+
+    v_goal = [math.cos(theta), math.sin(theta)]
+    # v_curr = [vel_x, vel_y]
+
+    right_v_x = []
+    right_v_y = []
+    min_goal = []
+
+    #get a new RVS that includes velocities only towards right of the current velocity
+    for i in range(len(v_x)):
+        alpha_i_rvs  = math.atan2(v_y[i],v_x[i]) 
+        if (0<= (yaw-alpha_i_rvs) <= np.pi):
+            right_v_x.append(v_x[i])
+            right_v_y.append(v_y[i])
+            min_goal = np.dot(v_goal, [right_v_x, right_v_y])
+
+    rvs_v_x = []
+    rvs_v_y = []
+
+    #ordered Reachable Velocity Set 
+    for j in range(len(min_goal)):
+        min_index = min_goal.index(max(min_goal))
+        rvs_v_x.append(right_v_x[min_index])
+        rvs_v_y.append(right_v_y[min_index])
+
+    return np.array([rvs_v_x, rvs_v_y])
+
+
+def compute_avo(vb_x,vb_y,va_x,va_y,ti,delta,pb_x,pb_y,pa_x, pa_y,w,V_des_x,V_des_y):
+    square_center_x = (delta*(math.exp(-ti/delta)-1)*(vb_x)-(pa_x- pb_x))/(ti+delta*(math.exp(-ti/delta)-1))
+    square_center_y = (delta*(math.exp(-ti/delta)-1)*(vb_y)-(pa_y- pb_y))/(ti+delta*(math.exp(-ti/delta)-1))
+    square_side = (math.sqrt(2)*w)/((ti+delta*(math.exp(-ti/delta)-1)))
+
+    x_min = square_center_x-square_side/2
+    y_min = square_center_y-square_side/2
+
+    x_max = square_center_x+square_side/2
+    y_max = square_center_y+square_side/2
+
+    acc_obs_x = 0 # need to find the acceleration of the obstcles
+    acc_obs_y = 0
+    vb_x_t = vb_x + delta*(math.exp(-ti/delta)-1)*acc_obs_x
+    vb_y_t = vb_y + delta*(math.exp(-ti/delta)-1)*acc_obs_y
+
+    if ((V_des_x<=(vb_x_t + x_max)) and (V_des_x>=(vb_x_t+x_min)) and (V_des_y>=(vb_y_t+y_min)) and (V_des_y<=(vb_y_t+y_max))): 
+        I_AVO = 1
+    else:
+        I_AVO = 0
+
+    return I_AVO
+
+def compute_pdf(vel,vel_var):
+    mu = vel
+    sigma = np.sqrt(vel_var)
+    n = 7 #number of samples
+    x = np.linspace((mu-3*sigma),(mu+3*sigma), n)
+    pdf = []
+    for i in x:
+        prob = norm.pdf((i-mu)/sigma, loc = mu, scale = sigma)
+        pdf.append(prob)
+    # print(pdf)
+    # print(np.sum(pdf)*(2*3*sigma)/n)
+
+    return x, pdf
+
+def PVO_Controller(ogm,pos_x,pos_y,current_vel_x,current_vel_y,yaw,tH,a_max,del_t,goal_x, goal_y,R_d, vel_var):
+    v_x_des = 0.0
+    v_y_des = 0.0
+    w = 2*R_d
+    plan_cycle = np.arange(0.0,tH,0.01)
+    lin_speed = np.linalg.norm([current_vel_x,current_vel_y])
+    RVS = admissible_vel(a_max,lin_speed,current_vel_x,current_vel_y, yaw,del_t,goal_x,goal_y,pos_x,pos_y)
+    prob_safe = 0.0
+    #for each velocity of ordered RVS find the probability of colliosion
+    for vi in range((RVS.size)/2):
+        prob_vi_des_ti = 0
+        for ti in plan_cycle[1:]:
+            prob_vi_des_ti_tH = 0
+            for row_i in range(len(ogm[0])):
+                for col_i in range(len(ogm[0][0])):
+                    if (ogm[0][row_i][col_i] != 0):
+                        prob_col_vi_des_comp = 1
+                        prob_col_vi_des_obs = 0
+
+                        vel_x_range, obs_vel_x_pdf = compute_pdf((ogm[1][row_i][col_i]-current_vel_x),vel_var) #(relative velocity - agent_current_velocity)
+                        vel_y_range, obs_vel_y_pdf = compute_pdf((ogm[2][row_i][col_i]-current_vel_y),vel_var)
+                        obs_pos_x = ogm[3][row_i][col_i]
+                        obs_pos_y = ogm[4][row_i][col_i]
+
+                        prob_col_vi_des_obs_vel = 0
+
+                        for vel_i in range(len(obs_vel_x_pdf)):
+                            for vel_j in range(len(obs_vel_y_pdf)):
+                                I_AVO = compute_avo(vel_x_range[vel_i],vel_y_range[vel_j],current_vel_x,current_vel_y,ti,del_t,obs_pos_x,obs_pos_y,pos_x,pos_y,w,RVS[0][vi],RVS[1][vi])
+                                prob_col_vi_des_obs_vel = ogm[0][row_i][col_i]*obs_vel_x_pdf[vel_i]*obs_vel_y_pdf[vel_j]*I_AVO
+                                prob_col_vi_des_obs += prob_col_vi_des_obs_vel
+
+                        
+                        prob_col_vi_des_comp *= (1-prob_col_vi_des_obs)
+
+            prob_vi_des_ti = 1-prob_col_vi_des_comp
+            prob_vi_des_ti_tH += (1-prob_vi_des_ti_tH)*prob_vi_des_ti
+
+        if (prob_vi_des_ti_tH <= prob_safe):
+            v_x_des = RVS[0][vi]
+            v_y_des = RVS[1][vi]
+
+    return v_x_des, v_y_des
+
+
+
+
+
+                
+            

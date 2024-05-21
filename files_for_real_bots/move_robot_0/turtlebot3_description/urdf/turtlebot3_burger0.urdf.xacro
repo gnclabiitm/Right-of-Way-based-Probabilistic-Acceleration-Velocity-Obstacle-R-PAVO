@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot name="turtlebot3_burger">
+
+  <!-- Define the robot links -->
+  <link name="base_footprint"/>
+  <link name="base_link"/>
+  <link name="camera_link"/>
+  <link name="imu_link"/>
+  <link name="left_wheel_link"/>
+  <link name="right_wheel_link"/>
+
+  <!-- Define the robot joints -->
+  <joint name="base_link_to_base_footprint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+  </joint>
+
+  <joint name="base_link_to_left_wheel_link" type="continuous">
+    <origin xyz="0.079 0 0.0285" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="left_wheel_link"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <joint name="base_link_to_right_wheel_link" type="continuous">
+    <origin xyz="0.079 0 -0.0285" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="right_wheel_link"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <joint name="base_link_to_camera_link" type="fixed">
+    <origin xyz="0.05 0 0.12" rpy="0 1.5707 0"/>
+    <parent link="base_link"/>
+    <child link="camera_link"/>
+  </joint>
+
+  <joint name="base_link_to_imu_link" type="fixed">
+    <origin xyz="0.05 0 0.06" rpy="0 1.5707 0"/>
+    <parent link="base_link"/>
+    <child link="imu_link"/>
+  </joint>
+
+  <!-- Define the robot geometry -->
+  <visual>
+    <geometry>
+      <mesh filename="package://turtlebot3_description/meshes/turtlebot3_burger/visual/meshes/turtlebot3_burger.dae"/>
+    </geometry>
+  </visual>
+
+  <!-- Define the robot collision -->
+  <collision>
+    <geometry>
+      <mesh filename="package://turtlebot3_description/meshes/turtlebot3_burger/collision/meshes/turtlebot3_burger.dae"/>
+    </geometry>
+  </collision>
+
+</robot>

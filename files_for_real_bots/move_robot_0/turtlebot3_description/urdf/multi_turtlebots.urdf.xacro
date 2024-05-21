@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<robot name="multi_turtlebots" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Define the fixed frame -->
+  <link name="odom"/>
+
+  <!-- Define the first Turtlebot -->
+  <xacro:include filename="$(find turtlebot_description)/urdf/turtlebot.urdf.xacro" />
+  <xacro:turtlebot_robot name="turtlebot1" pose="-2 0 0 0 0 0"/>
+
+  <!-- Define the second Turtlebot -->
+  <xacro:turtlebot_robot name="turtlebot2" pose="-1 0 0 0 0 0"/>
+
+  <!-- Define the third Turtlebot -->
+  <xacro:turtlebot_robot name="turtlebot3" pose="0 0 0 0 0 0"/>
+
+  <!-- Define the fourth Turtlebot -->
+  <xacro:turtlebot_robot name="turtlebot4" pose="1 0 0 0 0 0"/>
+
+  <!-- Define the fifth Turtlebot -->
+  <xacro:turtlebot_robot name="turtlebot5" pose="2 0 0 0 0 0"/>
+
+  <!-- Connect the Turtlebots to the fixed frame -->
+  <joint name="turtlebot1_to_odom" type="fixed">
+    <parent link="odom"/>
+    <child link="turtlebot1/base_footprint"/>
+  </joint>
+  <joint name="turtlebot2_to_odom" type="fixed">
+    <parent link="odom"/>
+    <child link="turtlebot2/base_footprint"/>
+  </joint>
+  <joint name="turtlebot3_to_odom" type="fixed">
+    <parent link="odom"/>
+    <child link="turtlebot3/base_footprint"/>
+  </joint>
+  <joint name="turtlebot4_to_odom" type="fixed">
+    <parent link="odom"/>
+    <child link="turtlebot4/base_footprint"/>
+  </joint>
+  <joint name="turtlebot5_to_odom" type="fixed">
+    <parent link="odom"/>
+    <child link="turtlebot5/base_footprint"/>
+  </joint>
+
+</robot>

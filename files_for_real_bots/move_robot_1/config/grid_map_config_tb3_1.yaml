@@ -1,0 +1,16 @@
+grid_map_topic: /tb3_1/ogm
+grid_map_visualizations:
+
+  - name: elevation_grid
+    type: occupancy_grid
+    params:
+      layer: occupancy
+      data_min: 1.0
+      data_max: 0.0
+      # layer: prev_position
+      # data_min: 1.0
+      # data_max: 0.0
+      # layer: velocities
+      # data_min: 1.0
+      # data_max: 0.0
+
